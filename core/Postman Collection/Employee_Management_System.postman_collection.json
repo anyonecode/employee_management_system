@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "Employee Management System API",
+    "description": "Complete API collection for Employee Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.access);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"test@example.com\",\n    \"password\": \"TestPassword123\",\n    \"password2\": \"TestPassword123\",\n    \"first_name\": \"Test\",\n    \"last_name\": \"User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.access);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"TestPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.access);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "token", "refresh", ""]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"old_password\": \"TestPassword123\",\n    \"new_password\": \"NewPassword123\",\n    \"new_password2\": \"NewPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/change-password/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "change-password", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"1234567890\",\n    \"address\": \"123 Main St, City, State\",\n    \"date_of_birth\": \"1990-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Form Templates",
+      "item": [
+        {
+          "name": "List Forms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/forms/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "forms", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Employee Registration Form\",\n    \"description\": \"Standard employee registration form\",\n    \"fields\": [\n        {\n            \"label\": \"Full Name\",\n            \"field_type\": \"text\",\n            \"is_required\": true,\n            \"placeholder\": \"Enter full name\",\n            \"order\": 0\n        },\n        {\n            \"label\": \"Email\",\n            \"field_type\": \"email\",\n            \"is_required\": true,\n            \"placeholder\": \"Enter email address\",\n            \"order\": 1\n        },\n        {\n            \"label\": \"Phone\",\n            \"field_type\": \"text\",\n            \"is_required\": false,\n            \"placeholder\": \"Enter phone number\",\n            \"order\": 2\n        },\n        {\n            \"label\": \"Date of Birth\",\n            \"field_type\": \"date\",\n            \"is_required\": true,\n            \"order\": 3\n        },\n        {\n            \"label\": \"Department\",\n            \"field_type\": \"select\",\n            \"is_required\": true,\n            \"options\": [\"IT\", \"HR\", \"Finance\", \"Marketing\", \"Operations\"],\n            \"order\": 4\n        },\n        {\n            \"label\": \"Position\",\n            \"field_type\": \"text\",\n            \"is_required\": true,\n            \"placeholder\": \"Enter position\",\n            \"order\": 5\n        },\n        {\n            \"label\": \"Skills\",\n            \"field_type\": \"checkbox\",\n            \"is_required\": false,\n            \"options\": [\"Python\", \"JavaScript\", \"Java\", \"C++\", \"SQL\"],\n            \"order\": 6\n        },\n        {\n            \"label\": \"Employment Type\",\n            \"field_type\": \"radio\",\n            \"is_required\": true,\n            \"options\": [\"Full-time\", \"Part-time\", \"Contract\"],\n            \"order\": 7\n        },\n        {\n            \"label\": \"Address\",\n            \"field_type\": \"textarea\",\n            \"is_required\": false,\n            \"placeholder\": \"Enter full address\",\n            \"order\": 8\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/forms/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "forms", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Form Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/forms/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "forms", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Form",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Employee Form\",\n    \"description\": \"Updated description\",\n    \"fields\": [\n        {\n            \"label\": \"Full Name\",\n            \"field_type\": \"text\",\n            \"is_required\": true,\n            \"placeholder\": \"Enter full name\",\n            \"order\": 0\n        },\n        {\n            \"label\": \"Email\",\n            \"field_type\": \"email\",\n            \"is_required\": true,\n            \"placeholder\": \"Enter email\",\n            \"order\": 1\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/forms/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "forms", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Form",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/forms/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "forms", "1", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "List Employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/employees/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employees", ""]
+            }
+          }
+        },
+        {
+          "name": "Search Employees",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/employees/?search=john",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employees", ""],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "john"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"form_template_id\": 1,\n    \"data\": {\n        \"Full Name\": \"John Doe\",\n        \"Email\": \"john.doe@example.com\",\n        \"Phone\": \"1234567890\",\n        \"Date of Birth\": \"1990-05-15\",\n        \"Department\": \"IT\",\n        \"Position\": \"Software Engineer\",\n        \"Skills\": [\"Python\", \"JavaScript\", \"SQL\"],\n        \"Employment Type\": \"Full-time\",\n        \"Address\": \"123 Main Street, City, State, 12345\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employees/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employees", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Employee Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/employees/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employees", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"form_template_id\": 1,\n    \"data\": {\n        \"Full Name\": \"John Updated Doe\",\n        \"Email\": \"john.updated@example.com\",\n        \"Phone\": \"9876543210\",\n        \"Date of Birth\": \"1990-05-15\",\n        \"Department\": \"HR\",\n        \"Position\": \"HR Manager\",\n        \"Skills\": [\"Python\", \"Java\"],\n        \"Employment Type\": \"Full-time\",\n        \"Address\": \"456 New Street, City, State, 54321\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employees/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employees", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/employees/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employees", "1", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

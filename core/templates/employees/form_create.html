@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Form - EMS</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem;
+        margin: 0;
+      }
+
+      .card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        max-width: 700px; /* smaller container width */
+        margin: 0 auto;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      h2 {
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-control {
+        width: 95%;
+        padding: 0.6rem; /* smaller input */
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 0.95rem;
+      }
+
+      .btn {
+        padding: 0.4rem 0.8rem; /* smaller buttons */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        text-align: center;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      .btn-cancel {
+        background: #6c757d;
+        color: white;
+      }
+
+      .field-item {
+        background: #f8f9fa;
+        padding: 0.8rem; /* smaller padding */
+        border-radius: 5px;
+        margin-bottom: 1.2rem; /* gap between fields */
+        border: 2px solid #dee2e6;
+        cursor: move;
+        transition: box-shadow 0.2s;
+      }
+
+      .field-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .field-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+      }
+
+      .drag-handle {
+        cursor: move;
+        padding: 0.3rem 0.6rem; /* smaller handle */
+        background: #667eea;
+        color: white;
+        border-radius: 3px;
+        font-weight: bold;
+        font-size: 0.85rem;
+      }
+
+      .field-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem; /* smaller gap inside fields */
+      }
+
+      .options-container {
+        margin-top: 0.8rem;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        display: none;
+      }
+
+      .alert {
+        padding: 0.8rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+      }
+
+      .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .form-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Create Dynamic Form</h2>
+      <div id="messages" aria-live="polite"></div>
+      <div class="form-group">
+        <label for="formName">Form Name</label>
+        <input
+          type="text"
+          id="formName"
+          class="form-control"
+          placeholder="Enter form name"
+        />
+      </div>
+      <div class="form-group">
+        <label for="formDescription">Form Description</label>
+        <textarea
+          id="formDescription"
+          class="form-control"
+          rows="3"
+          placeholder="Enter form description"
+        ></textarea>
+      </div>
+      <hr />
+      <div class="form-header">
+        <h3>Form Fields</h3>
+        <button type="button" class="btn btn-success" id="addFieldBtn">
+          + Add Field
+        </button>
+      </div>
+      <div id="fieldsContainer"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" id="saveFormBtn">
+          Save Form
+        </button>
+        <a href="/forms/" class="btn btn-cancel">Cancel</a>
+      </div>
+    </div>
+
+    <script>
+      const csrftoken = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("csrftoken="))
+        ?.split("=")[1];
+
+      let fieldCount = 0;
+      let draggedElement = null;
+
+      const showAlert = (message, type = "success") => {
+        const messagesDiv = document.getElementById("messages");
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        messagesDiv.innerHTML = "";
+        messagesDiv.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+      };
+
+      const addField = () => {
+        fieldCount++;
+        const container = document.getElementById("fieldsContainer");
+        const fieldItem = document.createElement("div");
+        fieldItem.className = "field-item";
+        fieldItem.draggable = true;
+        fieldItem.dataset.fieldId = fieldCount;
+
+        fieldItem.innerHTML = `
+        <div class="field-header">
+          <span class="drag-handle">☰ Field ${fieldCount}</span>
+          <button type="button" class="btn btn-danger btn-sm" onclick="removeField(this)">Remove</button>
+        </div>
+        <div class="field-controls">
+          <div class="form-group">
+            <label>Field Label</label>
+            <input type="text" class="form-control field-label" placeholder="e.g., Full Name">
+          </div>
+          <div class="form-group">
+            <label>Field Type</label>
+            <select class="form-control field-type" onchange="handleTypeChange(this)">
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="email">Email</option>
+              <option value="date">Date</option>
+              <option value="password">Password</option>
+              <option value="textarea">Text Area</option>
+              <option value="select">Select</option>
+              <option value="checkbox">Checkbox</option>
+              <option value="radio">Radio</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Placeholder</label>
+            <input type="text" class="form-control field-placeholder" placeholder="Enter placeholder">
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" class="field-required"> Required Field</label>
+          </div>
+        </div>
+        <div class="options-container">
+          <label>Options (one per line)</label>
+          <textarea class="form-control field-options" rows="3" placeholder="Option 1\nOption 2"></textarea>
+        </div>
+      `;
+        container.appendChild(fieldItem);
+        setupDragAndDrop(fieldItem);
+      };
+
+      const handleTypeChange = (select) => {
+        const fieldItem = select.closest(".field-item");
+        const optionsContainer = fieldItem.querySelector(".options-container");
+        optionsContainer.style.display = [
+          "select",
+          "checkbox",
+          "radio",
+        ].includes(select.value)
+          ? "block"
+          : "none";
+      };
+
+      const removeField = (button) => {
+        if (confirm("Are you sure you want to remove this field?"))
+          button.closest(".field-item").remove();
+      };
+
+      const setupDragAndDrop = (element) => {
+        element.addEventListener("dragstart", () => {
+          draggedElement = element;
+          element.classList.add("dragging");
+        });
+        element.addEventListener("dragend", () =>
+          element.classList.remove("dragging")
+        );
+        element.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          const afterElement = getDragAfterElement(e.clientY);
+          const container = document.getElementById("fieldsContainer");
+          if (!afterElement) container.appendChild(draggedElement);
+          else container.insertBefore(draggedElement, afterElement);
+        });
+      };
+
+      const getDragAfterElement = (y) => {
+        const container = document.getElementById("fieldsContainer");
+        const draggableElements = [
+          ...container.querySelectorAll(".field-item:not(.dragging)"),
+        ];
+        return draggableElements.reduce(
+          (closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            return offset < 0 && offset > closest.offset
+              ? { offset, element: child }
+              : closest;
+          },
+          { offset: Number.NEGATIVE_INFINITY }
+        ).element;
+      };
+
+      const saveForm = async () => {
+        const formName = document.getElementById("formName").value.trim();
+        const formDescription = document
+          .getElementById("formDescription")
+          .value.trim();
+        if (!formName) return showAlert("Please enter a form name", "error");
+
+        const fieldItems = document.querySelectorAll(".field-item");
+        if (fieldItems.length === 0)
+          return showAlert("Please add at least one field", "error");
+
+        const fields = [];
+        for (let [index, item] of fieldItems.entries()) {
+          const label = item.querySelector(".field-label").value.trim();
+          const fieldType = item.querySelector(".field-type").value;
+          const placeholder = item
+            .querySelector(".field-placeholder")
+            .value.trim();
+          const isRequired = item.querySelector(".field-required").checked;
+          const optionsTextarea = item.querySelector(".field-options");
+          if (!label) return showAlert("All fields must have a label", "error");
+          let options = null;
+          if (
+            ["select", "checkbox", "radio"].includes(fieldType) &&
+            optionsTextarea.value
+          )
+            options = optionsTextarea.value
+              .split("\n")
+              .map((opt) => opt.trim())
+              .filter(Boolean);
+          fields.push({
+            label,
+            field_type: fieldType,
+            is_required: isRequired,
+            placeholder,
+            order: index,
+            options,
+          });
+        }
+
+        try {
+          const response = await fetch("/api/forms/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrftoken,
+            },
+            body: JSON.stringify({
+              name: formName,
+              description: formDescription,
+              fields,
+            }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            showAlert("Form created successfully!", "success");
+            setTimeout(() => (window.location.href = "/forms/"), 1500);
+          } else
+            showAlert(
+              "Error creating form: " + (data.detail || JSON.stringify(data)),
+              "error"
+            );
+        } catch (error) {
+          showAlert("Error: " + error.message, "error");
+        }
+      };
+
+      document
+        .getElementById("addFieldBtn")
+        .addEventListener("click", addField);
+      document
+        .getElementById("saveFormBtn")
+        .addEventListener("click", saveForm);
+      window.onload = addField;
+    </script>
+  </body>
+</html>

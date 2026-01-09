@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Employee - EMS</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      .card {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: 2rem auto;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+      .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        text-align: center;
+      }
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+      .btn-cancel {
+        background: #6c757d;
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+      }
+      #dynamicFieldsContainer {
+        margin-top: 1rem;
+      }
+      .alert {
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+      }
+      .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Edit Employee</h2>
+      <div id="messages"></div>
+      <div id="employeeContainer" class="loading">
+        Loading employee details...
+      </div>
+    </div>
+
+    <script>
+      const employeeId = {{ employee_id }};
+      const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+      let currentEmployee = null;
+      let currentForm = null;
+
+      function showAlert(message, type='success') {
+        const messagesDiv = document.getElementById('messages');
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        messagesDiv.innerHTML = "";
+        messagesDiv.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+      }
+
+      async function loadEmployee() {
+        try {
+          const response = await fetch(`/api/employees/${employeeId}/`, {
+            headers: { 'X-CSRFToken': csrftoken }
+          });
+          currentEmployee = await response.json();
+          currentForm = currentEmployee.form_template;
+
+          const container = document.getElementById('employeeContainer');
+          container.innerHTML = `
+            <div class="form-group">
+              <label>Form Template</label>
+              <input type="text" class="form-control" value="${currentForm.name}" readonly>
+            </div>
+            <hr>
+            <h3>Employee Details</h3>
+            <div id="dynamicFieldsContainer"></div>
+            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+              <button type="button" class="btn btn-primary" onclick="updateEmployee()">Update Employee</button>
+              <a href="/employees/" class="btn btn-cancel">Cancel</a>
+            </div>
+          `;
+
+          const fieldsContainer = document.getElementById('dynamicFieldsContainer');
+          currentForm.fields.forEach(field => {
+            fieldsContainer.innerHTML += generateFieldHTML(field);
+          });
+
+          populateFieldValues();
+        } catch (error) {
+          document.getElementById('employeeContainer').innerHTML = '<p style="color: red;">Error loading employee</p>';
+        }
+      }
+
+      function generateFieldHTML(field) {
+        let inputHTML = '';
+        switch (field.field_type) {
+          case 'textarea':
+            inputHTML = `<textarea id="field_${field.id}" class="form-control employee-field" ${field.is_required ? 'required' : ''} placeholder="${field.placeholder || ''}" rows="4"></textarea>`;
+            break;
+          case 'select':
+            inputHTML = `<select id="field_${field.id}" class="form-control employee-field" ${field.is_required ? 'required' : ''}>
+              <option value="">-- Select --</option>
+              ${(field.options || []).map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+            </select>`;
+            break;
+          case 'checkbox':
+            inputHTML = '<div>' + (field.options || []).map(opt => `<label style="display:block;"><input type="checkbox" class="employee-field-checkbox" data-field-id="${field.id}" value="${opt}"> ${opt}</label>`).join('') + '</div>';
+            break;
+          case 'radio':
+            inputHTML = '<div>' + (field.options || []).map(opt => `<label style="display:block;"><input type="radio" name="field_${field.id}" class="employee-field-radio" data-field-id="${field.id}" value="${opt}"> ${opt}</label>`).join('') + '</div>';
+            break;
+          default:
+            inputHTML = `<input type="${field.field_type}" id="field_${field.id}" class="form-control employee-field" ${field.is_required ? 'required' : ''} placeholder="${field.placeholder || ''}">`;
+        }
+        return `<div class="form-group"><label>${field.label} ${field.is_required ? '<span style="color:red">*</span>' : ''}</label>${inputHTML}</div>`;
+      }
+
+      function populateFieldValues() {
+        currentForm.fields.forEach(field => {
+          const value = currentEmployee.data[field.label];
+          if (field.field_type === 'checkbox') {
+            const checkboxes = document.querySelectorAll(`.employee-field-checkbox[data-field-id="${field.id}"]`);
+            checkboxes.forEach(cb => { if (Array.isArray(value) && value.includes(cb.value)) cb.checked = true; });
+          } else if (field.field_type === 'radio') {
+            const radios = document.querySelectorAll(`.employee-field-radio[data-field-id="${field.id}"]`);
+            radios.forEach(radio => { if (radio.value === value) radio.checked = true; });
+          } else {
+            const input = document.getElementById(`field_${field.id}`);
+            if (input && value !== undefined) input.value = value;
+          }
+        });
+      }
+
+      async function updateEmployee() {
+        const employeeData = {};
+        let hasError = false;
+
+        currentForm.fields.forEach(field => {
+          if (field.field_type === 'checkbox') {
+            const values = Array.from(document.querySelectorAll(`.employee-field-checkbox[data-field-id="${field.id}"]:checked`)).map(cb => cb.value);
+            employeeData[field.label] = values;
+            if (field.is_required && values.length === 0) { showAlert(`${field.label} is required`, 'error'); hasError = true; }
+          } else if (field.field_type === 'radio') {
+            const radio = document.querySelector(`.employee-field-radio[data-field-id="${field.id}"]:checked`);
+            employeeData[field.label] = radio ? radio.value : '';
+            if (field.is_required && !employeeData[field.label]) { showAlert(`${field.label} is required`, 'error'); hasError = true; }
+          } else {
+            const input = document.getElementById(`field_${field.id}`);
+            employeeData[field.label] = input.value;
+            if (field.is_required && !input.value) { showAlert(`${field.label} is required`, 'error'); hasError = true; }
+          }
+        });
+
+        if (hasError) return;
+
+        try {
+          const response = await fetch(`/api/employees/${employeeId}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+            body: JSON.stringify({ form_template_id: currentForm.id, data: employeeData })
+          });
+
+          if (response.ok) {
+            showAlert('Employee updated successfully!', 'success');
+            setTimeout(() => { window.location.href = '/employees/'; }, 1500);
+          } else {
+            const data = await response.json();
+            showAlert('Error updating employee: ' + JSON.stringify(data), 'error');
+          }
+        } catch (error) {
+          showAlert('Error: ' + error.message, 'error');
+        }
+      }
+
+      window.onload = loadEmployee;
+    </script>
+  </body>
+</html>
